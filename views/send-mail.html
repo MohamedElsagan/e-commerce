@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Send Gmail Message</title>
+  <style>
+    :root{
+      --primary: #0984e3;
+      --accent: #74b9ff;
+      --bg: linear-gradient(135deg, #f0f7ff, #e6f2ff);
+      --card-bg: #ffffff;
+      --radius: 12px;
+      --shadow: 0 8px 30px rgba(3, 36, 74, 0.08);
+      --text: #222;
+    }
+
+    *{box-sizing:border-box;font-family: "Poppins", sans-serif}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: var(--bg);
+      padding:24px;
+      color:var(--text);
+    }
+
+    .card{
+      width:100%;
+      max-width:720px;
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:0;
+    }
+
+    .panel{
+      padding:36px;
+    }
+
+    .left{
+      background: linear-gradient(180deg, rgba(9,132,227,0.12), rgba(116,185,255,0.06));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:18px;
+      text-align:center;
+    }
+
+    .logo{
+      width:90px;height:90px;border-radius:50%;
+      background: linear-gradient(135deg,var(--primary),var(--accent));
+      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+      box-shadow: 0 6px 18px rgba(9,132,227,0.18);
+      font-size:28px;
+    }
+
+    h1{margin:0;font-size:20px;color:var(--primary)}
+    p.lead{margin:0;color:#334;opacity:0.9}
+
+    form{display:flex;flex-direction:column;gap:12px;}
+    label{font-size:13px;color:#333;margin-bottom:6px}
+    input[type="text"], input[type="email"], textarea{
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #e4e7eb;
+      border-radius:10px;
+      font-size:14px;
+      outline:none;
+      transition: box-shadow .15s, border-color .15s;
+      resize:vertical;
+    }
+    input:focus, textarea:focus{box-shadow:0 4px 18px rgba(9,132,227,0.08);border-color:var(--primary)}
+
+    textarea{min-height:140px;max-height:360px}
+
+    .btn{
+      padding:12px 16px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      background:var(--primary);
+      color:#fff;
+      font-weight:600;
+      font-size:15px;
+      box-shadow:0 8px 20px rgba(9,132,227,0.12);
+    }
+    .btn:active{transform:translateY(1px)}
+
+    .muted{font-size:13px;color:#666}
+    .footer{font-size:13px;color:#666;margin-top:8px}
+
+    /* responsive */
+    @media (max-width:880px){
+      .card{grid-template-columns:1fr; padding:0}
+      .left{padding:28px}
+      .panel{padding:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="Send mail card">
+    <div class="panel left">
+      <div class="logo">G</div>
+      <h1>Send Mail</h1>
+      <p class="lead">أرسل رسالة بريد إلكتروني عبر السيرفر</p>
+      <p class="muted">ادخل العنوان، الموضوع، والنص، وسيتم إرسال الرسالة إلى Gmail المستهدف</p>
+    </div>
+
+    <div class="panel">
+      <form id="mail-form" autocomplete="off">
+        <div>
+          <label for="to">To (recipient email)</label>
+          <input id="to" type="email" placeholder="example@gmail.com" required />
+        </div>
+
+        <div>
+          <label for="subject">Subject</label>
+          <input id="subject" type="text" placeholder="Subject here" required />
+        </div>
+
+        <div>
+          <label for="text">Message</label>
+          <textarea id="text" placeholder="Write your message..." required></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+          <button type="submit" class="btn">Send Message</button>
+          <div id="status" class="muted footer" aria-live="polite"></div>
+        </div>
+      </form>
+
+      <p class="footer">ملاحظة: يجب أن يكون لديك endpoint في السيرفر يستقبل POST على <code>/message</code> ويرسل الإيميل (مثل nodemailer).</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('mail-form');
+    const statusEl = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const to = document.getElementById('to').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const text = document.getElementById('text').value.trim();
+
+  if (!to || !subject || !text) {
+    statusEl.textContent = "⚠️ كل الحقول مطلوبة.";
+    statusEl.style.color = "red";
+    return;
+  }
+
+  statusEl.textContent = "⏳ جارٍ الإرسال...";
+  statusEl.style.color = "#333";
+
+  try {
+    const res = await fetch("http://localhost:3000/api/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, subject, text })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok) {
+      statusEl.textContent = "✅ تم إرسال البريد بنجاح!";
+      statusEl.style.color = "green";
+      form.reset();
+      setTimeout(() => statusEl.textContent = "", 4000);
+    } else {
+      statusEl.textContent = `❌ فشل الإرسال: ${data.message || "خطأ غير معروف"}`;
+      statusEl.style.color = "red";
+    }
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "❌ تعذر الاتصال بالسيرفر.";
+    statusEl.style.color = "red";
+  }
+});
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{
+  "validation": {
+    "name": {
+      "empty": "Name is empty",
+      "type": "Name should contain only letters",
+      "min": "Name must be at least 3 letters",
+      "max": "Name must not exceed 9 letters"
+    },
+    "email": {
+      "empty": "Email is empty",
+      "invalid": "Email is invalid",
+      "exists": "Email already exists"
+    },
+    "password": {
+      "empty": "Password is empty",
+      "short": "Password must be at least 8 characters",
+      "long": "Password must not exceed 16 characters"
+    },
+    "login": {
+      "invalid": "Email or password is incorrect"
+    }
+  },
+  "token": {
+    "access_token_missing": "Access token missing.",
+    "access_token_expired": "Access token expired.",
+    "invalid_access_token": "Invalid access token.",
+    "no_refresh_token": "No refresh token provided."
+  },
+  "limiter": {
+    "too_many_requests": "Too many requests, please try again later."
+  },
+  "server": {
+    "error": "An error occurred on the server. Please try again later.",
+    "not_found": "The requested resource was not found.",
+    "unauthorized": "You are not authorized to access this resource.",
+    "forbidden": "You do not have permission to access this route.",
+    "not_admin": "You are not an admin."
+  },
+  "success": {
+    "register": "Registered successfully.",
+    "login": "Logged in successfully.",
+    "logout": "Logged out successfully.",
+    "data_fetched": "Data fetched successfully.",
+    "updated": "Updated successfully.",
+    "deleted": "Deleted successfully."
+  },
+  "auth": {
+  "reset_link_sent": "If the email exists, a reset link will be sent.",
+  "user_not_found": "User not found.",
+  "email_not_verified": "Email is not verified.",
+  "account_blocked": "Your account has been blocked. Please contact support.",
+  "token_id_email_required": "Token, ID, and email are required.",
+  "invalid_or_expired_token": "Invalid or expired token.",
+  "invalid_token": "Invalid token.",
+  "token_already_used": "Token already used.",
+  "token_expired": "Token expired."
+}
+
+
+}
