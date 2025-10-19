@@ -1,24 +1,32 @@
 import { conn } from "../config/db.js"
 
 class ProductModel {
-    static async createWithTranslation({img,price , translations}){
-        const connection = await conn.getConnection(); 
+    static async createWithTranslation({ img, category_id ,price, translations }) {
+        const connection = await conn.getConnection();
         try {
-            await connection.beginTransaction(); 
+            await connection.beginTransaction();
+            const [checkCategoryId] = await connection.query(
+                `SELECT * FROM categories
+                WHERE id = ? `,[category_id]
+            )
+            console.log("checkCategoryId = " , checkCategoryId);
+            
+            if(checkCategoryId.length === 0)
+                throw new Error("Category Id Is Not Found.");
 
             const [productResult] = await connection.query(
-                "INSERT INTO products (img, price) VALUES (?, ?)",
-                [img, price]
+                "INSERT INTO products (img,category_id, price) VALUES (?,?, ?)",
+                [img, category_id,price]
             );
             const productId = productResult.insertId;
 
             for (const t of translations) {
                 await connection.query(
-                `
-                    INSERT INTO product_translations (product_id, lang, name, decription)
+                    `
+                    INSERT INTO product_translations (product_id, lang, name, description)
                     VALUES (?, ?, ?, ?)
                 `,
-                [productId, t.lang, t.name, t.decription]
+                    [productId, t.lang, t.name, t.description]
                 );
             }
 
@@ -32,24 +40,24 @@ class ProductModel {
         }
     }
 
-    static async getSingle({lang , id}) {
+    static async getSingle({ lang, id }) {
         const [results] = await conn.query(
             `
                 SELECT p.price , pt.name , pt.decription FROM products p
                 JOIN product_translations pt
                 ON p.id = pt.product_id
                 WHERE pt.lang = ? AND p.id = ?
-            `,[lang , id]
+            `, [lang, id]
         )
-        
+
         return results.length ? results[0] : null;
     };
 
 
-    static async getAll({lang , limit , offset , orderById}){
+    static async getAll({ lang, limit, offset, orderById }) {
         const [results] = await conn.query(
             `
-                SELECT p.id , pt.name , p.price, pt.decription
+                SELECT p.id , pt.name , p.price, pt.description
                 FROM products p
                 JOIN product_translations pt
                 ON p.id = pt.product_id
@@ -57,16 +65,16 @@ class ProductModel {
                 Order BY p.id ${orderById.toUpperCase()}
                 LIMIT ? 
                 OFFSET ?
-            `,[lang   , limit , offset ]
+            `, [lang, limit, offset]
         )
         return results.length ? results : null;
     }
 
-    static async count(){
+    static async count() {
         const [countRows] = await conn.query(`
             SELECT COUNT(*) AS total FROM products
         `);
         return countRows[0].total;
     }
 }
-export{ProductModel};
+export { ProductModel };

@@ -18,6 +18,39 @@
     },
     "login": {
       "invalid": "Email or password is incorrect"
+    },
+    "product": {
+      "name": {
+        "empty": "Product name is empty",
+        "min": "Product name must be at least 3 letters",
+        "max": "Product name must not exceed 100 letters"
+      },
+      "price": {
+        "empty": "Price is empty",
+        "invalid": "Price must be a positive number"
+      },
+      "category_id": {
+        "empty": "Category ID is required",
+        "invalid": "Category ID must be a valid integer"
+      },
+      "description": {
+        "empty": "Description is empty",
+        "max": "Description must not exceed 500 characters"
+      }
+    },
+    "category": {
+      "name": {
+        "empty": "Category name is empty",
+        "min": "Category name must be at least 3 letters",
+        "max": "Category name must not exceed 50 letters"
+      },
+      "description": {
+        "empty": "Description is empty",
+        "max": "Description must not exceed 500 characters"
+      }
+    },
+    "language": {
+      "invalid": "Invalid language code (must be 'en' or 'ar')"
     }
   },
   "token": {
@@ -45,16 +78,14 @@
     "deleted": "Deleted successfully."
   },
   "auth": {
-  "reset_link_sent": "If the email exists, a reset link will be sent.",
-  "user_not_found": "User not found.",
-  "email_not_verified": "Email is not verified.",
-  "account_blocked": "Your account has been blocked. Please contact support.",
-  "token_id_email_required": "Token, ID, and email are required.",
-  "invalid_or_expired_token": "Invalid or expired token.",
-  "invalid_token": "Invalid token.",
-  "token_already_used": "Token already used.",
-  "token_expired": "Token expired."
-}
-
-
+    "reset_link_sent": "If the email exists, a reset link will be sent.",
+    "user_not_found": "User not found.",
+    "email_not_verified": "Email is not verified.",
+    "account_blocked": "Your account has been blocked. Please contact support.",
+    "token_id_email_required": "Token, ID, and email are required.",
+    "invalid_or_expired_token": "Invalid or expired token.",
+    "invalid_token": "Invalid token.",
+    "token_already_used": "Token already used.",
+    "token_expired": "Token expired."
+  }
 }

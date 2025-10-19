@@ -9,6 +9,7 @@ import { authRouter } from './routers/authRouter.js';
 import { i18next, i18nextMiddleware } from './config/i18n.js';
 import { accessTokenMiddleware } from './middlewares/accessTokenMiddleware.js';
 import { gloabalLimiter } from './config/rateLimit.js';
+import { categoryRouter } from './routers/categoryRouter.js';
 
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(i18nextMiddleware.handle(i18next))
 app.use("/api/change-lang/:lang/auth", langMiddleWare, authRouter);
 app.use("/api", googleRouter);
 /** PRODUCT */
+app.use("/api/change-lang/:lang/categories", langMiddleWare, accessTokenMiddleware, gloabalLimiter, categoryRouter);
 app.use("/api/change-lang/:lang/products", langMiddleWare, accessTokenMiddleware, gloabalLimiter, productRouter);
 /**------------------------------------------------------------------------------------ */
 app.get("/:lang/test", langMiddleWare, (req, res) => {
