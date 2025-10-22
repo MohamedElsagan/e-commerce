@@ -55,13 +55,13 @@ const authController = {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                status: user.status
+                role: user.role
             });
             const refreshToken = generateRefreshToken({
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                status: user.status
+                role: user.role
             });
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             await RefreshTokenModel.create({
@@ -92,7 +92,7 @@ const authController = {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    status: user.status
+                    role: user.role
                 }
             });
 
@@ -217,7 +217,7 @@ const authController = {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                status: user.status
+                role: user.role
             });
 
             // 5️⃣ إرسال الـ Access Token الجديد

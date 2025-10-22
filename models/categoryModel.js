@@ -30,6 +30,12 @@ class CategoryModel {
             connection.release()
         }
     }
+    static async findById({ id }) {
+        const [result] = await conn.query(
+            `SELECT * FROM categories WHERE id = ?`, [id]
+        );
+        return result[0] ?? null
+    }
 
     static async updateWithTranslation({ id, img, translations }) {
         const connection = await conn.getConnection();
@@ -51,32 +57,36 @@ class CategoryModel {
             for (const t of translations) {
                 const [exists] = await connection.query(
                     `
-                SELECT * FROM category_translations 
-                WHERE category_id = ? AND lang = ?
+                    SELECT * FROM category_translations 
+                    WHERE category_id = ? AND lang = ?
                 `,
                     [id, t.lang]
                 );
 
                 if (exists.length > 0) {
-
                     await connection.query(
                         `
-                    UPDATE category_translations
-                    SET name = ?, description = ?
-                    WHERE category_id = ? AND lang = ?
-                    `,
+                            UPDATE category_translations
+                            SET name = ?, description = ?
+                            WHERE category_id = ? AND lang = ?
+                        `,
                         [t.name, t.description, id, t.lang]
                     );
-                    await connection.commit();
                 } else {
-
-                    return { message: "Category Not updated successfully." };
+                    await connection.query(
+                        `
+                            INSERT INTO category_translations (category_id, lang, name, description)
+                            VALUES (?, ?, ?, ?)
+                        `,
+                        [id, t.lang, t.name, t.description]
+                    );
                 }
-
             }
+            await connection.commit();
             return { message: "Category updated successfully." };
         } catch (error) {
             await connection.rollback();
+            console.error("Transaction failed:", error.message);
             throw error;
         } finally {
             connection.release();
@@ -99,7 +109,7 @@ class CategoryModel {
     static async getAll({ lang, limit, offset, orderById }) {
         const [results] = await conn.query(
             `
-                SELECT ct.name , ct.description , c.img , c.created_at , c.updated_at
+                SELECT c.id, ct.name , ct.description , c.img , c.created_at , c.updated_at
                 FROM categories c
                 JOIN category_translations ct
                 ON c.id = ct.category_id
@@ -117,7 +127,7 @@ class CategoryModel {
     }
     static async deleteAll() {
         const [result] = await conn.query(`DELETE FROM categories`);
-        return result.affectedRows ;
+        return result.affectedRows;
     }
     static async count() {
         const [countRows] = await conn.query(`

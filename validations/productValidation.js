@@ -14,22 +14,36 @@ const productVaildation = {
             })
     },
 
-    setCategoryId (field){
+    setCategoryId(field) {
         return body(field)
-        .notEmpty()
-        .withMessage((field , {req}) =>{
-            return req.t("validation.product.category_id.empty")
-        })
-        .isInt()
-        .withMessage((field , {req}) =>{
-            return req.t("validation.product.category_id.invalid")
-        })
+            .notEmpty()
+            .withMessage((field, { req }) => {
+                return req.t("validation.product.category_id.empty")
+            })
+            .isInt()
+            .withMessage((field, { req }) => {
+                return req.t("validation.product.category_id.invalid")
+            })
     },
 
     setTranslation(field) {
         return body(field)
             .isArray()
-            .isLength({ min: 1 });
+            .custom((value) => {
+                if (!Array.isArray(value)) {
+                    throw new Error("Translations must be an array");
+                }
+
+                if (value.length < 2) {
+                    throw new Error("Translations must contain at least 2 items");
+                }
+
+                if (value.length > 2) {
+                    throw new Error("Translations cannot contain more than 2 items");
+                }
+
+                return true;
+            });
     },
 
     setName(field) {
@@ -66,4 +80,4 @@ const productVaildation = {
 
 }
 
-export {productVaildation};
+export { productVaildation };

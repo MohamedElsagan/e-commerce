@@ -46,13 +46,17 @@ const categoryController = {
     async getAll(req, res) {
         try {
             let { limit, page, orderById } = req.query;
-            limit = + limit || 3;
-            const count = await CategoryModel.count();
-            const allPage = Math.ceil(count / limit);
 
-            if (!orderById || (orderById.toUpperCase() !== "DESC" && orderById.toUpperCase() !== "ASC")) {
+            if (Array.isArray(orderById))
+                orderById = req.query.orderById[0];
+
+            if (typeof orderById !== "string" || !["ASC", "DESC"].includes(orderById.toUpperCase())) {
                 orderById = "ASC";
             }
+
+            limit = + limit || 3;
+            const count = await CategoryModel.count() || 0;
+            const allPage = Math.max(1, Math.ceil(count / limit));
 
             page = + page || 1;
             if (!page || page > allPage) {
