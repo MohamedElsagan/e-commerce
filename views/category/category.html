@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ar">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>إضافة تصنيف - Admin</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #fff;
+            --accent: #0f62fe;
+            --muted: #64748b;
+            --danger: #ef4444;
+            --radius: 12px;
+            font-family: "Tajawal", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 100%);
+            padding: 24px;
+            direction: rtl;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 940px;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 30px rgba(15, 37, 64, 0.08);
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+        }
+
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 20px;
+            color: #071133;
+        }
+
+        p.lead {
+            margin: 0 0 18px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 13px;
+            color: #233043;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #e6e9ef;
+            background: #fbfcff;
+            font-size: 14px;
+            outline: none;
+            transition: box-shadow .12s, border-color .12s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            box-shadow: 0 4px 18px rgba(15, 98, 255, 0.08);
+            border-color: var(--accent);
+        }
+
+        textarea {
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        .file-card {
+            background: linear-gradient(180deg, #ffffff, #fbfdff);
+            border: 1px dashed #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .img-preview {
+            width: 100%;
+            max-width: 360px;
+            height: 220px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #e6e9ef;
+            background: linear-gradient(180deg, #f8fafc, #ffffff);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(15, 98, 255, 0.12);
+        }
+
+        .btn.secondary {
+            background: #fff;
+            color: #223;
+            border: 1px solid #e6e9ef;
+            box-shadow: none;
+        }
+
+        .foot {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .note {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* responsive */
+        @media (max-width:900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .img-preview {
+                max-width: 100%;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" role="main">
+        <div>
+            <h1>إضافة تصنيف جديد</h1>
+            <p class="lead">ارفع صورة للـ category واكتب الاسم والوصف بالإنجليزي والعربي.</p>
+
+            <form id="categoryForm" enctype="multipart/form-data" autocomplete="off">
+                <!-- TRANSLATIONS -->
+                <div class="row">
+                    <div>
+                        <label for="name_en">Name (EN)</label>
+                        <input id="name_en" name="name_en" type="text" placeholder="e.g. Phones"  />
+                    </div>
+                    <div>
+                        <label for="name_ar">الاسم (AR)</label>
+                        <input id="name_ar" name="name_ar" type="text" placeholder="مثال: الهواتف"  />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div>
+                        <label for="desc_en">Description (EN)</label>
+                        <textarea id="desc_en" name="desc_en" placeholder="Short description in English"
+                            ></textarea>
+                    </div>
+                    <div>
+                        <label for="desc_ar">الوصف (AR)</label>
+                        <textarea id="desc_ar" name="desc_ar" placeholder="وصف قصير بالعربي" ></textarea>
+                    </div>
+                </div>
+
+                <!-- hidden fields are optional; we'll build translations in JS -->
+                <div style="display:flex;gap:10px;align-items:center;margin-top:8px;">
+                    <input id="imageInput" name="image" type="file" accept="image/*" />
+                    <button type="submit" class="btn">Create Category</button>
+                    <button type="button" id="clearBtn" class="btn secondary">Clear</button>
+                </div>
+
+                <p class="note">ملاحظة: الفورم هيبعت `form-data` وداخلها حقل `translations` كـ JSON string — مناسب لـ
+                    backend بموديلك.</p>
+            </form>
+        </div>
+
+        <aside style="display:flex;flex-direction:column;gap:12px;">
+            <div class="file-card">
+                <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+                    <strong>Preview</strong>
+                    <span class="note">Image preview</span>
+                </div>
+                <img id="preview" class="img-preview"
+                    src="data:image/svg+xml;utf8,
+          <svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%' height='100%' fill='%23f4f6fb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='20'>No image selected</text></svg>"
+                    alt="preview" />
+                <div class="foot">
+                    <div class="note">Choose an image (recommended 800x600)</div>
+                </div>
+            </div>
+
+            <div style="background:#fff;border-radius:10px;padding:12px;border:1px solid #eef2ff;">
+                <strong>Example translations payload</strong>
+                <pre
+                    style="white-space:pre-wrap;margin:10px 0;color:#334155;font-size:13px;background:#fbfdff;padding:8px;border-radius:8px;border:1px solid #f1f5f9;">
+{
+  "translations": [
+    { "lang": "en", "name": "Phones", "description": "Smartphones and mobile devices." },
+    { "lang": "ar", "name": "الهواتف", "description": "هواتف ذكية وأجهزة محمولة." }
+  ]
+}
+        </pre>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        (function () {
+            const link = "http://localhost:3000/api/change-lang/ar/categories"
+
+            const form = document.getElementById('categoryForm');
+            const imageInput = document.getElementById('imageInput');
+            const preview = document.getElementById('preview');
+            const clearBtn = document.getElementById('clearBtn');
+
+            // image preview
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) {
+                    // reset to placeholder svg
+                    preview.src = preview.getAttribute('data-placeholder') || preview.src;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => preview.src = reader.result;
+                reader.readAsDataURL(file);
+            });
+
+            // clear form
+            clearBtn.addEventListener('click', () => {
+                form.reset();
+                // reset preview placeholder
+                preview.src = "data:image/svg+xml;utf8," + encodeURIComponent(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#f4f6fb"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6b7280" font-size="20">No image selected</text></svg>'
+                );
+            });
+
+            // submit handler: build translations array then FormData
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // collect translation fields
+                const name_en = document.getElementById('name_en').value.trim();
+                const name_ar = document.getElementById('name_ar').value.trim();
+                const desc_en = document.getElementById('desc_en').value.trim();
+                const desc_ar = document.getElementById('desc_ar').value.trim();
+
+                if (!name_en || !name_ar || !desc_en || !desc_ar) {
+                    alert('الرجاء ملء جميع الحقول');
+                    return;
+                }
+
+                const translations = [
+                    { lang: 'en', name: name_en, description: desc_en },
+                    { lang: 'ar', name: name_ar, description: desc_ar }
+                ];
+
+                const fd = new FormData();
+                // append translations as JSON string (to be parsed on backend)
+                fd.append('translations', JSON.stringify(translations));
+
+                // append image file if present
+                if (imageInput.files && imageInput.files[0]) {
+                    fd.append('img', imageInput.files[0]); // backend expects field name "image" or "img" change if needed
+                }
+
+                // optional: extra fields (example)
+                // fd.append('stock', '10');
+                // fd.append('price', '100.25');
+                // fd.append('category_id', '60');
+
+                try {
+                    // note: change URL لو endpoint مختلف
+                    const res = await fetch(link, {
+                        method: 'POST',
+                        body: fd
+                    });
+
+                    const json = await res.json();
+                    if (!res.ok) {
+                        alert('Error: ' + (json.msg || JSON.stringify(json)));
+                        console.error('Server error', json);
+                        return;
+                    }
+                    alert('Category created! id: ' + (json.id ?? 'n/a'));
+                    // ممكن تعمل إعادة توجيه أو تنظيف الفورم
+                    form.reset();
+                    clearBtn.click();
+                } catch (err) {
+                    console.error(err);
+                    alert('Network error: ' + err.message);
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

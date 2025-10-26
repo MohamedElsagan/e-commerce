@@ -9,8 +9,11 @@ const categoryController = {
             if (!validationResultError.isEmpty())
                 return res.status(400).json({ msg: validationResultError.array() });
 
-            const { img, translations } = req.body;
-            const id = await CategoryModel.createWithTranslation({ img, translations });
+            let translations = req.body.translations;
+            const url_cloudinary = req.file?.path || null;
+            const file_name_cloudinary = req.file?.filename || null;
+
+            const id = await CategoryModel.createWithTranslation({ url_cloudinary, file_name_cloudinary, translations });
             const data = matchedData(req);
 
             res.status(201).json({
@@ -86,8 +89,11 @@ const categoryController = {
             if (!validationResultError.isEmpty())
                 return res.status(400).json({ msg: validationResultError.array() });
 
-            const { img, translations } = req.body;
-            const updatedData = await CategoryModel.updateWithTranslation({ id, img, translations });
+            let translations = req.body.translations;
+            // const img = req.file ? req.file.filename : null;
+            const url_cloudinary = req.file?.path || null;
+            const file_name_cloudinary = req.file?.filename || null;
+            const updatedData = await CategoryModel.updateWithTranslation({ id, url_cloudinary ,file_name_cloudinary, translations });
             res.status(201).json({
                 msg: "Category updated successfully",
                 id,
@@ -106,7 +112,8 @@ const categoryController = {
                 return res.status(404).json({ msg: "Category ID is required" });
 
             const deleted = await CategoryModel.deleteById({ id });
-            if (!deleted)
+            
+            if (! deleted)
                 return res.status(404).json({ msg: "Category not found" });
 
             return res.status(200).json({ msg: "Category deleted successfully." })

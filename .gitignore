@@ -76,3 +76,5 @@ storage/
 *.bak
 *.old
 *.orig
+
+test.excalidraw

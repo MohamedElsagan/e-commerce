@@ -2,6 +2,7 @@ import { validationResult, matchedData } from "express-validator";
 
 import { ProductModel } from "../models/productModel.js"
 import { CategoryModel } from "../models/categoryModel.js";
+import { ProductImgsModel } from "../models/productImgsModel.js";
 
 const productController = {
 
@@ -11,18 +12,24 @@ const productController = {
       if (!validationResultError.isEmpty())
         return res.status(400).json({ msg: validationResultError.array() });
 
-      const { img, category_id, price, translations } = req.body;
-      const checkCategoryId = CategoryModel.findById({ id: +category_id });
-      if (!checkCategoryId)
-        return res.status(400).json({ msg: "Not Found Category" });
-      const id = await ProductModel.createWithTranslation({ img, category_id, price, translations });
-      const data = matchedData(req);
+      const { stock, price, category_id, translations } = req.body;
+      const img = req.files || null
+      // const checkCategoryId = await CategoryModel.findById({ id: +category_id });
 
+      // if (!checkCategoryId)
+      //   return res.status(400).json({ msg: "Not Found Category" });
+
+      const id = await ProductModel.createWithTranslation({ img, category_id, stock, price, translations });
+      const data = matchedData(req);
       res.status(201).json({
         msg: "Product created successfully",
         id,
+        stock,
+        price,
+        category_id,
         data
       });
+
 
     } catch (error) {
       console.log(error);
@@ -41,9 +48,10 @@ const productController = {
       })
       if (!oneProduct) {
         return res.status(404).json({ msg: "Product not found" });
-      }
-
-      res.status(200).json({ msg: oneProduct });
+      }      
+      const imgs = await ProductImgsModel.get({ product_id: id })
+      const data = {...oneProduct , imgs}
+      res.status(200).json({ msg: "sucess", data });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: error.message });
@@ -63,9 +71,9 @@ const productController = {
 
       limit = + limit || 3;
       const count = await ProductModel.count() || 0;
-      
+
       const allPage = Math.max(1, Math.ceil(count / limit));
-      console.log("allPage = " , allPage);
+      console.log("allPage = ", allPage);
 
       page = + page || 1;
       if (!page || page > allPage) {
@@ -97,8 +105,8 @@ const productController = {
       if (!validationResultError.isEmpty())
         return res.status(400).json({ msg: validationResultError.array() });
 
-      const { img,category_id ,price ,translations } = req.body;
-      const updatedData = await ProductModel.updateWithTranslation({ id ,category_id, price, img, translations });
+      const { category_id, price, stock } = req.body;
+      const updatedData = await ProductModel.update({ id, category_id, price, stock });
       res.status(201).json({
         msg: "Product updated successfully",
         id,
@@ -111,35 +119,35 @@ const productController = {
   },
 
   async deleteById(req, res) {
-        try {
-            const id = +req.params.id;
-            if (!id)
-                return res.status(404).json({ msg: "Product ID is required" });
+    try {
+      const id = +req.params.id;
+      if (!id)
+        return res.status(404).json({ msg: "Product ID is required" });
 
-            const deleted = await ProductModel.deleteById({ id });
-            if (!deleted)
-                return res.status(404).json({ msg: "Product not found" });
+      const deleted = await ProductModel.deleteById({ id });
+      if (!deleted)
+        return res.status(404).json({ msg: "Product not found" });
 
-            return res.status(200).json({ msg: "Product deleted successfully." })
-        } catch (error) {
-            console.error("Delete Product Error:", error);
-            res.status(500).json({ msg: error.message });
-        }
-    },
-
-    async deleteAll(req, res) {
-        try {
-            const deletedCount = await ProductModel.deleteAll();
-            if (deletedCount === 0)
-                return res.status(404).json({ msg: "No Products found to delete." });
-            return res.status(200).json({
-                msg: `Deleted ${deletedCount} Products successfully.`
-            });
-        } catch (error) {
-            console.error("Delete All Products Error:", error);
-            res.status(500).json({ msg: error.message });
-        }
+      return res.status(200).json({ msg: "Product deleted successfully." })
+    } catch (error) {
+      console.error("Delete Product Error:", error);
+      res.status(500).json({ msg: error.message });
     }
+  },
+
+  async deleteAll(req, res) {
+    try {
+      const deletedCount = await ProductModel.deleteAll();
+      if (deletedCount === 0)
+        return res.status(404).json({ msg: "No Products found to delete." });
+      return res.status(200).json({
+        msg: `Deleted ${deletedCount} Products successfully.`
+      });
+    } catch (error) {
+      console.error("Delete All Products Error:", error);
+      res.status(500).json({ msg: error.message });
+    }
+  }
 
 }
 export { productController };

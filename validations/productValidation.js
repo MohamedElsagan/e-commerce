@@ -8,10 +8,11 @@ const productVaildation = {
             .withMessage((field, { req }) => {
                 return req.t("validation.product.price.empty");
             })
-            .isFloat({ min: 0 })
+            .isFloat({ min: 1 })
             .withMessage((field, { req }) => {
                 return req.t("validation.product.price.invalid");
             })
+            .toFloat()
     },
 
     setCategoryId(field) {
@@ -20,14 +21,34 @@ const productVaildation = {
             .withMessage((field, { req }) => {
                 return req.t("validation.product.category_id.empty")
             })
-            .isInt()
+            .isInt({ min: 1 })
             .withMessage((field, { req }) => {
                 return req.t("validation.product.category_id.invalid")
             })
+            .toInt()
+
+    },
+    setStock(field) {
+        return body(field)
+            .notEmpty()
+            .withMessage((field, { req }) => {
+                return req.t("validation.product.category_id.empty")
+            })
+            .isInt({ min: 1 })
+            .withMessage((field, { req }) => {
+                return req.t("validation.product.category_id.invalid")
+            })
+            .toInt()
+
     },
 
     setTranslation(field) {
         return body(field)
+            .customSanitizer((value) => {
+                if (typeof value === "string")
+                    return JSON.parse(value);
+                return value;
+            })
             .isArray()
             .custom((value) => {
                 if (!Array.isArray(value)) {

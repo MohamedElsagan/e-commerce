@@ -1,13 +1,19 @@
+import { deleteCloudinary } from "../config/cloudinary.js";
 import { conn } from "../config/db.js";
 class CategoryModel {
-
-    static async createWithTranslation({ img, translations }) {
+    static async findById({connection, id }) {
+        const [result] = await connection.query(
+            `SELECT * FROM categories WHERE id = ?`, [id]
+        );
+        return result[0] ?? null
+    }
+    static async createWithTranslation({ url_cloudinary, file_name_cloudinary, translations }) {
         const connection = await conn.getConnection();
         try {
             await connection.beginTransaction();
             const [categoryResult] = await connection.query(
-                "INSERT INTO categories (img) VALUES (?)",
-                [img]
+                "INSERT INTO categories (url_cloudinary , file_name_cloudinary) VALUES (?,?)",
+                [url_cloudinary, file_name_cloudinary]
             )
             const categoryId = categoryResult.insertId;
             for (const t of translations) {
@@ -30,29 +36,24 @@ class CategoryModel {
             connection.release()
         }
     }
-    static async findById({ id }) {
-        const [result] = await conn.query(
-            `SELECT * FROM categories WHERE id = ?`, [id]
-        );
-        return result[0] ?? null
-    }
 
-    static async updateWithTranslation({ id, img, translations }) {
+    static async updateWithTranslation({ id, url_cloudinary, file_name_cloudinary, translations }) {
         const connection = await conn.getConnection();
         try {
             await connection.beginTransaction();
-            const [category] = await connection.query(
-                `SELECT * FROM categories WHERE id = ?`, [id]
-            );
-            if (category.length === 0)
+            const category = await this.findById({connection , id});
+            if (! category)
                 throw new Error("Category Is Not Found.");
 
-            await connection.query(
-                `
-                UPDATE categories SET img = ?
-                WHERE id = ?
-                `, [img, id]
-            );
+            if (url_cloudinary && file_name_cloudinary) {
+                const deleteOldCloudinary = await deleteCloudinary(category.file_name_cloudinary);
+                await connection.query(
+                    `
+                    UPDATE categories SET url_cloudinary = ? , file_name_cloudinary = ?
+                    WHERE id = ?
+                    `, [url_cloudinary, file_name_cloudinary, id]
+                );
+            }
 
             for (const t of translations) {
                 const [exists] = await connection.query(
@@ -96,7 +97,7 @@ class CategoryModel {
     static async getSingle({ lang, id }) {
         const [results] = await conn.query(
             `
-                SELECT ct.name , ct.description , c.img , c.created_at , c.updated_at
+                SELECT ct.name , ct.description , c.url_cloudinary , c.file_name_cloudinary , c.created_at , c.updated_at
                 FROM categories c
                 JOIN category_translations ct
                 ON c.id = ct.category_id
@@ -109,7 +110,7 @@ class CategoryModel {
     static async getAll({ lang, limit, offset, orderById }) {
         const [results] = await conn.query(
             `
-                SELECT c.id, ct.name , ct.description , c.img , c.created_at , c.updated_at
+                SELECT ct.name , ct.description , c.url_cloudinary , c.file_name_cloudinary , c.created_at , c.updated_at
                 FROM categories c
                 JOIN category_translations ct
                 ON c.id = ct.category_id
@@ -122,10 +123,34 @@ class CategoryModel {
         return results.length ? results : null;
     }
     static async deleteById({ id }) {
-        const [result] = await conn.query(`DELETE FROM categories WHERE id = ?`, [id]);
-        return result.affectedRows > 0;
+        const connection = await conn.getConnection();
+        try {
+            await connection.beginTransaction();
+            const publicId = await this.findById({ connection ,id });
+            if (publicId) {
+                const deleteOldCloudinary = await deleteCloudinary(publicId.file_name_cloudinary);
+                const [result] = await connection.query(`DELETE FROM categories WHERE id = ?`, [id]);
+                return result.affectedRows > 0;
+            }
+            return null
+            
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+
+
     }
     static async deleteAll() {
+        const [rows] = await conn.query(`SELECT * FROM categories`);
+        for (const url of rows) {
+            if (url.file_name_cloudinary != null) {
+
+                const deleteOldCloudinary = await deleteCloudinary(url.file_name_cloudinary);
+            }
+        }
         const [result] = await conn.query(`DELETE FROM categories`);
         return result.affectedRows;
     }

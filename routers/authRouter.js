@@ -8,7 +8,7 @@ const authRouter = express.Router({ mergeParams: true });
 
 authRouter.post(
     "/register",
-    [setName("name"), setEmail("email"), setPassword("password")],
+    [setName("name"), setEmail("email"), setPassword("password"),body("role")],
     authController.register
 )
 authRouter.post(

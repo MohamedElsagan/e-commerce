@@ -3,8 +3,14 @@ import { body } from "express-validator"
 const categoryVaildation = {
     setTranslation(field) {
         return body(field)
+            .customSanitizer((value) => {
+                if (typeof value === "string") {
+                    return JSON.parse(value);
+                }
+                return value;
+            })
             .isArray()
-            .isLength({ min: 1 });
+            .isLength();
     },
 
     setName(field) {

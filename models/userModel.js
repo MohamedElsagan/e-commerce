@@ -1,35 +1,35 @@
 import { conn } from "../config/db.js";
 
 class UserModel {
-  static async create({name , email , password }){
+  static async create({ name, email, password, role }) {
     const [result] = await conn.query(
-        `INSERT INTO users(name, email, password) VALUES (?,?,?)`,
-        [name, email, password]
+      `INSERT INTO users(name, email, password , role) VALUES (?,?,?,?)`,
+      [name, email, password, role]
     )
-    return result;
+    return result.insertId;
   }
 
-  static async findEmail({email}){
+  static async findEmail({ email }) {
     const [result] = await conn.query(
-        `SELECT * FROM users WHERE email = ? ` , [email]
+      `SELECT * FROM users WHERE email = ? `, [email]
     )
     return result[0] ?? null;
   }
 
-  static async findById({id}){
+  static async findById({ id }) {
     const [row] = await conn.query(
-      `SELECT * FROM users WHERE id = ?`,[id]
+      `SELECT * FROM users WHERE id = ?`, [id]
     );
     return row[0] ?? null;
   }
 
-  static async setPassword({id , hashedPassword}){
+  static async setPassword({ id, hashedPassword }) {
     await conn.query(
-      `UPDATE users SET password = ? WHERE id = ?`,[hashedPassword , id]
+      `UPDATE users SET password = ? WHERE id = ?`, [hashedPassword, id]
     );
   }
 
-  static async findOrCreate({ profileId, profileDisplayName, profileEmail, profilePhoto }){
+  static async findOrCreate({ profileId, profileDisplayName, profileEmail, profilePhoto }) {
     const connection = await conn.getConnection();
     try {
       const [rows] = await connection.query(
@@ -38,29 +38,29 @@ class UserModel {
       );
       if (rows.length > 0)
         return rows[0];
-  
+
       const [result] = await connection.query(
         `INSERT INTO users(name, email, img, google_id) VALUES (?,?,?,?)`,
         [profileDisplayName, profileEmail, profilePhoto, profileId]
       );
-  
+
       const [newUser] = await conn.query(
         `SELECT * FROM users WHERE id = ?`,
         [result.insertId]
       );
-  
+
       return newUser[0];
     } catch (error) {
-      await connection.rollback(); 
+      await connection.rollback();
       throw error;
-    } finally{
+    } finally {
       connection.release();
-    }
-      
     }
 
   }
-export {UserModel};
+
+}
+export { UserModel };
 
 
 
@@ -91,7 +91,7 @@ export {UserModel};
 //   );
 // }
 
-// /// GOOGLE 
+// /// GOOGLE
 // const findOrCreate = async ({ profileId, profileDisplayName, profileEmail, profilePhoto }) => {
 //   const [rows] = await conn.query(
 //     "SELECT * FROM `users` WHERE `google_id` = ?",

@@ -9,7 +9,7 @@ const generateAccessToken = ({id , name , email , role})=>{
         email : email,
         role : role
     } , process.env.JWT_ACCESS_SECRET,{
-        expiresIn : process.env.JWT_ACCESS_EXPIRES_IN || "15m"
+        expiresIn : process.env.JWT_ACCESS_EXPIRES_IN 
     })
 }
 const generateRefreshToken = ({id , name , email , role})=>{
@@ -19,7 +19,7 @@ const generateRefreshToken = ({id , name , email , role})=>{
         email : email,
         role : role
     } , process.env.JWT_REFRESH_SECRET,{
-        expiresIn : process.env.JWT_REFRESH_EXPIRES_IN || "7d"
+        expiresIn : process.env.JWT_REFRESH_EXPIRES_IN 
     })
 }
 

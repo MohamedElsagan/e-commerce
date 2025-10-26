@@ -6,23 +6,21 @@ import { RefreshTokenModel } from "../models/refreshTokenModel.js";
 import { PasswordResetModel } from "../models/passwordResetModel.js";
 import { sendMmail } from "../config/mailer.js";
 import jwt from 'jsonwebtoken';
+import { cookieUtlis } from "../utils/cookieUtlis.js";
+import { roleUtlis } from "../utils/roleUtils.js";
 
 
 const authController = {
 
     async register(req, res) {
-        console.log("------------------");
-        console.log("Params:", req.params.lang);
-        console.log("query:", req.query.lang);
-        console.log("cooke:", req.cookies.lang);
-        console.log("req.lang:", req.lang);
         try {
-            // req.i18n.changeLanguage("ar")      
             const errors = validationResult(req);
             if (!errors.isEmpty())
                 return res.status(400).json({ errors: errors.array(), test: req.t("validation.email.invalid") });
 
             const { email, name, password } = req.body;
+            const role = req.body.role || roleUtlis.USER;
+
             const existing = await UserModel.findEmail(email);
             if (existing)
                 return res.status(400).json({ msg: req.t("validation.email.exists") });
@@ -30,8 +28,42 @@ const authController = {
             const user = await UserModel.create({
                 email,
                 password: hashed,
-                name
+                name,
+                role
             });
+            const accessToken = generateAccessToken({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            });
+            const refreshToken = generateRefreshToken({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            });
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await RefreshTokenModel.create({
+                userId: user,
+                token: refreshToken,
+                expires_at: expiresAt
+            })
+
+            res.cookie("accessToken", accessToken, {
+                httpOnly: cookieUtlis.HTTP_ONLY,
+                sameSite: cookieUtlis.SAME_SITE,
+                secure: cookieUtlis.SECURE,
+                maxAge: cookieUtlis.MAX_AGE_ACCESS_TOKEN,
+                path: cookieUtlis.PATH
+            })
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: cookieUtlis.HTTP_ONLY,
+                sameSite: cookieUtlis.SAME_SITE,
+                secure: cookieUtlis.SECURE,
+                maxAge: cookieUtlis.MAX_AGE_REFRESH_TOKEN,
+                path: cookieUtlis.PATH
+            })
 
             res.status(201).json({ msg: req.t("success.register"), user });
         } catch (error) {
@@ -45,11 +77,11 @@ const authController = {
             const { email, password } = req.body;
             const user = await UserModel.findEmail({ email });
             if (!user)
-                res.status(400).json({ msg: req.t("validation.login") });
+                res.status(400).json({ msg: req.t("validation.login.invalid") });
 
             const isMatched = await comparePassword(password, user.password);
             if (!isMatched)
-                return res.status(400).json({ msg: req.t("validation.login") });
+                return res.status(400).json({ msg: req.t("validation.login.invalid") });
 
             const accessToken = generateAccessToken({
                 id: user.id,
@@ -71,18 +103,18 @@ const authController = {
             })
 
             res.cookie("accessToken", accessToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: true,
-                maxAge: 1000 * 60 * 15,
-                path: "/"
+                httpOnly: cookieUtlis.HTTP_ONLY,
+                sameSite: cookieUtlis.SAME_SITE,
+                secure: cookieUtlis.SECURE,
+                maxAge: cookieUtlis.MAX_AGE_ACCESS_TOKEN,
+                path: cookieUtlis.PATH
             })
             res.cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: true,
-                maxAge: 1000 * 60 * 60 * 24 * 7,
-                path: "/"
+                httpOnly: cookieUtlis.HTTP_ONLY,
+                sameSite: cookieUtlis.SAME_SITE,
+                secure: cookieUtlis.SECURE,
+                maxAge: cookieUtlis.MAX_AGE_REFRESH_TOKEN,
+                path: cookieUtlis.PATH
             })
 
             res.status(200).json({
@@ -121,17 +153,15 @@ const authController = {
                 token: hashed,
                 expiresAt
             });
-            const resetLink = `http://localhost:3000/api/auth/reset-password?email=${email}&id=${user.id}&token=${rawToken}`;
-            const html = `
-                <p>Hi,</p>
-                <p>You requested a password reset. Click the link below to reset your password:</p>
-                <a href="${resetLink}">Reset Password</a>
-                <p>This link will expire in ${process.env.RESET_TOKEN_EXPIRES_MIN || 60} minutes.</p>
-            `;
-            await sendMmail({
+            const resetLink = `http://localhost:3000/api/change-lang/${req.lang}/auth/reset-password?email=${email}&id=${user.id}&token=${rawToken}`;
+            const html = req.t("mail.body", {
+                resetLink,
+                expireTime: process.env.RESET_TOKEN_EXPIRES_MIN || 60
+            });
+             await sendMmail({
                 to: user.email,
-                subject: "Reset your password",
-                html
+                subject: req.t("mail.subject"),
+                html,
             });
 
             return res.status(200).json({ msg: req.t("auth.reset_link_sent") });
@@ -222,11 +252,12 @@ const authController = {
 
             // 5️⃣ إرسال الـ Access Token الجديد
             res.cookie("accessToken", newAccessToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                maxAge: 1000 * 60 * 15,
-                path: "/"
-            });
+                httpOnly: cookieUtlis.HTTP_ONLY,
+                sameSite: cookieUtlis.SAME_SITE,
+                secure: cookieUtlis.SECURE,
+                maxAge: cookieUtlis.MAX_AGE_ACCESS_TOKEN,
+                path: cookieUtlis.PATH
+            })
 
             res.json({ accessToken: newAccessToken });
         } catch (err) {

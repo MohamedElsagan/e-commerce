@@ -1,92 +1,61 @@
+import { deleteCloudinary } from "../config/cloudinary.js";
 import { conn } from "../config/db.js"
+import { activeUtlis } from "../utils/activeUtlis.js"
+import { CategoryModel } from "./categoryModel.js";
+import { ProductImgsModel } from "./productImgsModel.js";
+import { ProductTranslationsModel } from "./productTranslationsModels.js";
 
 class ProductModel {
-    static async createWithTranslation({ img, category_id, price, translations }) {
+    static async findById({ connection, id }) {
+        const [productId] = await connection.query(`SELECT * FROM products WHERE id =? `, [id])
+        return productId[0] ?? null;
+    }
+
+    static async insert({ connection, category_id, stock, is_available, price }) {
+        const [productResult] = await connection.query(`INSERT INTO products (category_id, stock, is_available, price) VALUES (?, ?, ?, ?)`,
+            [category_id, stock, is_available, price]
+        );
+        return productResult.insertId;
+    }
+
+    static async createWithTranslation({ img, category_id, stock, price, translations }) {
         const connection = await conn.getConnection();
         try {
             await connection.beginTransaction();
-            const [checkCategoryId] = await connection.query(
-                `SELECT * FROM categories
-                WHERE id = ? `, [category_id]
-            )
-            console.log("checkCategoryId = ", checkCategoryId);
-
-            if (checkCategoryId.length === 0)
+            const checkCategoryId = await CategoryModel.findById({ connection, id: category_id })
+            if (!checkCategoryId)
                 throw new Error("Category Id Is Not Found.");
 
-            const [productResult] = await connection.query(
-                "INSERT INTO products (img,category_id, price) VALUES (?,?, ?)",
-                [img, category_id, price]
-            );
-            const productId = productResult.insertId;
-
-            for (const t of translations) {
-                await connection.query(
-                    `
-                    INSERT INTO product_translations (product_id, lang, name, description)
-                    VALUES (?, ?, ?, ?)
-                `,
-                    [productId, t.lang, t.name, t.description]
-                );
+            const productId = await this.insert({ connection, category_id, stock, is_available: activeUtlis.TRUE, price });
+            await ProductImgsModel.create({ conn: connection, img, product_id: productId, is_main: activeUtlis.TRUE })
+            if (Array.isArray(translations) && translations.length > 0) {
+                for (const t of translations) {
+                    await ProductTranslationsModel.insert({ connection, product_id: productId, lang: t.lang, name: t.name, description: t.description })
+                }
             }
-
-            await connection.commit(); // 4️⃣ تأكيد العملية
+            await connection.commit();
             return productId;
         } catch (error) {
-            await connection.rollback(); // 5️⃣ التراجع عن التغييرات
+            await connection.rollback();
             throw error;
         } finally {
             connection.release();
         }
     }
 
-    static async updateWithTranslation({ id, category_id, img, price, translations }) {
+
+    static async update({ id, category_id, price, stock }) {
         const connection = await conn.getConnection();
         try {
-            const [productId] = await connection.query(
-                `SELECT * FROM products WHERE id =? `, [id]
-            )
-            console.log("productId = ", productId);
-
-            if (productId.length === 0)
+            const productId = await this.findById({ connection, id })
+            if (!productId)
                 throw new Error("Product Is Not Found.");
 
-            const [chceckCategoryId] = await connection.query(
-                `SELECT * FROM categories WHERE id = ?`, [category_id]
-            );
-            if (chceckCategoryId.length === 0)
-                throw new Error("Category Is Not Found.");
+            const checkCategoryId = await CategoryModel.findById({ connection, id: category_id })
+            if (!checkCategoryId)
+                throw new Error("Category Id Is Not Found.");
 
-            await connection.query(
-                `
-                    UPDATE products SET img = ? , price = ? , category_id = ?   
-                `, [img, price, category_id]
-            )
-            for (const t of translations) {
-                const [exists] = await connection.query(
-                    `
-                        SELECT * FROM product_translations 
-                        WHERE product_id = ? AND lang = ?
-                    `, [id, t.lang]
-                )
-                if (exists.length > 0) {
-                    await connection.query(
-                        `
-                            UPDATE product_translations
-                            SET name = ? , description = ?
-                            WHERE product_id = ? AND lang = ?
-                        `, [t.name, t.description, id, t.lang]
-                    )
-                } else {
-                    await connection.query(
-                        `
-                            INSERT INTO product_translations (product_id, lang, name, description)
-                            VALUES (?, ?, ?, ?)
-                        `,
-                        [id, t.lang, t.name, t.description]
-                    );
-                }
-            }
+            await connection.query(`UPDATE products SET stock = ? , price = ?, category_id = ? WHERE id = ?`, [stock, price, category_id, id]);
             await connection.commit();
             return { message: "Product updated successfully." };
 
@@ -102,8 +71,7 @@ class ProductModel {
     static async getSingle({ lang, id }) {
         const [results] = await conn.query(
             `
-                SELECT p.price , pt.name , pt.description , ct.name AS category,
-                p.created_at , p.updated_at
+                SELECT pt.name ,p.price , p.stock,pt.description , ct.name AS category, p.created_at , p.updated_at
                 FROM products p
                 JOIN product_translations pt
                 ON p.id = pt.product_id
@@ -122,15 +90,17 @@ class ProductModel {
     static async getAll({ lang, limit, offset, orderById }) {
         const [results] = await conn.query(
             `
-                SELECT p.price , pt.name , pt.description , ct.name AS category
+                SELECT p.id , p.price  ,pt.name ,pi.url_cloudinary AS img, ct.name AS category
                 FROM products p
+                JOIN product_imgs pi
+                ON p.id = pi.product_id
                 JOIN product_translations pt
                 ON p.id = pt.product_id
                 JOIN categories c
                 ON c.id = p.category_id
                 JOIN category_translations ct
                 ON c.id = ct.category_id
-                WHERE pt.lang = ? AND ct.lang = ?
+                WHERE pt.lang = ? AND ct.lang = ?  AND pi.is_main = 1
                 Order BY p.id ${orderById.toUpperCase()}
                 LIMIT ? 
                 OFFSET ?
@@ -140,19 +110,60 @@ class ProductModel {
     }
 
     static async deleteById({ id }) {
-        const [result] = await conn.query(`DELETE FROM products WHERE id = ?`, [id]);
-        return result.affectedRows > 0;
+        const connection = await conn.getConnection();
+        try {
+            await connection.beginTransaction();
+            const productId = await this.findById({ connection, id })
+            if (!productId)
+                throw new Error("Product Is Not Found.");
+
+            const checkImgId = await ProductImgsModel.findByProductId({ conn: connection, product_id: id });
+            if (checkImgId) {
+                for (const c of checkImgId) {
+                    await deleteCloudinary(c.file_name_cloudinary);
+                }
+            }
+            const [result] = await connection.query(`DELETE FROM products WHERE id = ?`, [id]);
+            await connection.commit();
+            return result.affectedRows > 0;
+
+        } catch (error) {
+            await connection.rollback();
+            console.log(error);
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
     static async deleteAll() {
-        const [result] = await conn.query(`DELETE FROM products`);
-        return result.affectedRows;
+        const connection = await conn.getConnection();
+        try {
+            const checkImgId = await ProductImgsModel.getAll({ conn: connection });
+            if (checkImgId) {
+                for (const c of checkImgId) {
+                    await deleteCloudinary(c.file_name_cloudinary);
+                }
+                
+            }
+            const [result] = await connection.query(`DELETE FROM products`);
+            await connection.commit();
+            return result.affectedRows;
+        } catch (error) {
+            await connection.rollback();
+            console.log(error);
+            throw error;
+        } finally {
+            connection.release();
+
+        }
     }
 
     static async count() {
-        const [countRows] = await conn.query(`
-            SELECT COUNT(*) AS total FROM products
-        `);        
+        const [countRows] = await conn.query(`SELECT COUNT(*) AS total FROM products`);
         return countRows[0].total;
     }
+
+
+
 }
 export { ProductModel };
