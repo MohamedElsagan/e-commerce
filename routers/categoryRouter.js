@@ -4,7 +4,7 @@ import { body } from "express-validator";
 import { categoryController } from "../controllers/categoryController.js";
 import { isAllowedMiddleware } from "../middlewares/isAllowedMiddleware.js";
 import {roleUtlis} from "../utils/roleUtils.js";
-import { multerMiddleware } from "../middlewares/multerMiddleware.js";
+// import { multerMiddleware } from "../middlewares/multerMiddleware.js";
 import { uploadCloudinary } from "../config/cloudinary.js";
 const categoryRouter = express.Router({ mergeParams: true });
 

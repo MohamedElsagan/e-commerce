@@ -4,7 +4,7 @@ import { productController } from "../controllers/productController.js";
 import { productVaildation } from "../validations/productValidation.js";
 import { isAllowedMiddleware } from "../middlewares/isAllowedMiddleware.js";
 import { roleUtlis } from "../utils/roleUtils.js";
-import { upload } from "../config/multer.js";
+// import { upload } from "../config/multer.js";
 import { uploadCloudinary } from "../config/cloudinary.js";
 import { ProductTranslationsController } from "../controllers/ProductTranslationsController.js";
 import { productImgsController } from "../controllers/productImgsController.js";

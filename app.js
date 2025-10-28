@@ -11,7 +11,7 @@ import { accessTokenMiddleware } from './middlewares/accessTokenMiddleware.js';
 import { gloabalLimiter } from './config/rateLimit.js';
 import { categoryRouter } from './routers/categoryRouter.js';
 import { isAllowedMiddleware } from './middlewares/isAllowedMiddleware.js';
-import { upload, UPLOADS_FOLDER } from './config/multer.js';
+// import { upload, UPLOADS_FOLDER } from './config/multer.js';
 import { asyncWraperMiddleware } from './middlewares/asyncWraperMiddleware.js';
 import { httpStatusERROR } from './utils/httpStatusText.js';
 import path from "path";
@@ -43,18 +43,18 @@ app.use("/api", googleRouter);
 app.use("/api/change-lang/:lang/categories", langMiddleWare, accessTokenMiddleware, gloabalLimiter, categoryRouter);
 app.use("/api/change-lang/:lang/products", langMiddleWare, accessTokenMiddleware, gloabalLimiter, productRouter);
 
-app.post("/upload", upload.array("img"), (req, res) => {
-  try {
+// app.post("/upload", upload.array("img"), (req, res) => {
+//   try {
 
-    res.json({ ok: true, file: req.files.length });
+//     res.json({ ok: true, file: req.files.length });
 
-  } catch (error) {
-    console.log(error);
-    res.json({ ok: true, error: error.message });
+//   } catch (error) {
+//     console.log(error);
+//     res.json({ ok: true, error: error.message });
 
 
-  }
-})
+//   }
+// })
 /** cloudinary */
 app.post("/upload-cloudinary", uploadCloudinary.array("img"), (req, res) => {
   try {
