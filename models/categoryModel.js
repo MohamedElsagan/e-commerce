@@ -1,7 +1,7 @@
 import { deleteCloudinary } from "../config/cloudinary.js";
 import { conn } from "../config/db.js";
 class CategoryModel {
-    static async findById({connection, id }) {
+    static async findById({ connection, id }) {
         const [result] = await connection.query(
             `SELECT * FROM categories WHERE id = ?`, [id]
         );
@@ -41,8 +41,8 @@ class CategoryModel {
         const connection = await conn.getConnection();
         try {
             await connection.beginTransaction();
-            const category = await this.findById({connection , id});
-            if (! category)
+            const category = await this.findById({ connection, id });
+            if (!category)
                 throw new Error("Category Is Not Found.");
 
             if (url_cloudinary && file_name_cloudinary) {
@@ -126,14 +126,14 @@ class CategoryModel {
         const connection = await conn.getConnection();
         try {
             await connection.beginTransaction();
-            const publicId = await this.findById({ connection ,id });
+            const publicId = await this.findById({ connection, id });
             if (publicId) {
                 const deleteOldCloudinary = await deleteCloudinary(publicId.file_name_cloudinary);
                 const [result] = await connection.query(`DELETE FROM categories WHERE id = ?`, [id]);
                 return result.affectedRows > 0;
             }
             return null
-            
+
         } catch (error) {
             await connection.rollback();
             throw error;
